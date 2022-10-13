@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static org.springframework.http.HttpMethod.GET;
 
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 @SpringBootApplication
 public class ResolutionsApplication extends WebSecurityConfigurerAdapter {
 
@@ -36,9 +38,12 @@ public class ResolutionsApplication extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+//        http.authorizeRequests(authz -> authz
+//                .mvcMatchers(GET, "/resolutions", "/resolutions/**").hasAuthority("resolution:read")
+//                .anyRequest().hasAuthority("resolution:write")).httpBasic(basic -> {});
         http.authorizeRequests(authz -> authz
-                .mvcMatchers(GET, "/resolutions", "/resolutions/**").hasAuthority("resolution:read")
-                .anyRequest().hasAuthority("resolution:write")).httpBasic(basic -> {});
+                        .anyRequest().authenticated())
+                .httpBasic(basic -> {});
     }
 }
 
