@@ -15,40 +15,54 @@ import java.util.UUID;
 
 @RestController
 public class ResolutionController {
-	private final ResolutionRepository resolutions;
+    private final ResolutionRepository resolutions;
 
-	public ResolutionController(ResolutionRepository resolutions) {
-		this.resolutions = resolutions;
-	}
+    public ResolutionController(ResolutionRepository resolutions) {
+        this.resolutions = resolutions;
+    }
 
-	@GetMapping("/resolutions")
-	public Iterable<Resolution> read() {
-		return this.resolutions.findAll();
-	}
+    @GetMapping("/resolutions")
+    public Iterable<Resolution> read() {
+        return this.resolutions.findAll();
+    }
 
-	@GetMapping("/resolution/{id}")
-	public Optional<Resolution> read(@PathVariable("id") UUID id) {
-		return this.resolutions.findById(id);
-	}
+    @GetMapping("/resolution/{id}")
+    public Optional<Resolution> read(@PathVariable("id") UUID id) {
+        return this.resolutions.findById(id);
+    }
 
-	@PostMapping("/resolution")
-	public Resolution make(@RequestBody String text) {
-		String owner = "user";
-		Resolution resolution = new Resolution(text, owner);
-		return this.resolutions.save(resolution);
-	}
+    @PostMapping("/resolution")
+    public Resolution make(@CurrentUsername String owner, @RequestBody String text) {
+        Resolution resolution = new Resolution(text, owner);
+        return this.resolutions.save(resolution);
+    }
 
-	@PutMapping(path="/resolution/{id}/revise")
-	@Transactional
-	public Optional<Resolution> revise(@PathVariable("id") UUID id, @RequestBody String text) {
-		this.resolutions.revise(id, text);
-		return read(id);
-	}
+    /**
+     * Alternative ways of doing make
+     */
+//    @PostMapping("/resolution")
+//    public Resolution make(@CurrentSecurityContext SecurityContext ctx, @RequestBody String text) {
+//        User user = (User) ctx.getAuthentication().getPrincipal();
+//        // ...
+//    }
 
-	@PutMapping("/resolution/{id}/complete")
-	@Transactional
-	public Optional<Resolution> complete(@PathVariable("id") UUID id) {
-		this.resolutions.complete(id);
-		return read(id);
-	}
+//    @PostMapping("/resolution")
+//    public Resolution make(@CurrentSecurityContext(expression="authentication.name") String owner, @RequestBody String text) {
+//        Resolution resolution = new Resolution(text, owner);
+//        return this.resolutions.save(resolution);
+//    }
+
+    @PutMapping(path = "/resolution/{id}/revise")
+    @Transactional
+    public Optional<Resolution> revise(@PathVariable("id") UUID id, @RequestBody String text) {
+        this.resolutions.revise(id, text);
+        return read(id);
+    }
+
+    @PutMapping("/resolution/{id}/complete")
+    @Transactional
+    public Optional<Resolution> complete(@PathVariable("id") UUID id) {
+        this.resolutions.complete(id);
+        return read(id);
+    }
 }
