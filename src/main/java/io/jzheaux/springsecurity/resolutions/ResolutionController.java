@@ -1,5 +1,7 @@
 package io.jzheaux.springsecurity.resolutions;
 
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,14 +24,23 @@ public class ResolutionController {
         this.resolutions = resolutions;
     }
 
+    /**
+     * @PostFilter("filterObject.owner == authentication.name")
+     * For large queries, this option doesn't really scale since it's having
+     * to pull large result sets from the database, hydrate them into instances of Resolution,
+     * only to simply throw away the majority of them. This causes needless GC pressure.
+     *
+     * */
     @GetMapping("/resolutions")
     @PreAuthorize("hasAuthority('resolution:read')")
+    @PostFilter("filterObject.owner == authentication.name || hasRole('ADMIN')")
     public Iterable<Resolution> read() {
         return this.resolutions.findAll();
     }
 
     @GetMapping("/resolution/{id}")
     @PreAuthorize("hasAuthority('resolution:read')")
+    @PostAuthorize("returnObject.orElse(null)?.owner == authentication.name || hasRole('ADMIN')")
     public Optional<Resolution> read(@PathVariable("id") UUID id) {
         return this.resolutions.findById(id);
     }
@@ -58,6 +69,7 @@ public class ResolutionController {
 
     @PutMapping(path = "/resolution/{id}/revise")
     @PreAuthorize("hasAuthority('resolution:write')")
+    @PostAuthorize("returnObject.orElse(null)?.owner == authentication.name")
     @Transactional
     public Optional<Resolution> revise(@PathVariable("id") UUID id, @RequestBody String text) {
         this.resolutions.revise(id, text);
@@ -67,6 +79,7 @@ public class ResolutionController {
     @PutMapping("/resolution/{id}/complete")
     @Transactional
     @PreAuthorize("hasAuthority('resolution:write')")
+    @PostAuthorize("returnObject.orElse(null)?.owner == authentication.name")
     public Optional<Resolution> complete(@PathVariable("id") UUID id) {
         this.resolutions.complete(id);
         return read(id);
